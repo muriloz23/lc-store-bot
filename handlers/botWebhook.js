@@ -1,14 +1,14 @@
 const express = require('express');
 const { REST, Routes } = require('discord.js');
 
-const app = express();
-app.use(express.json());
-
 const config = require('../config');
 const logger = require('../utils/logger');
 
 // Configuração do Discord REST para dar cargo
 const rest = new REST().setToken(config.token);
+
+const app = express();
+app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
   try {
@@ -37,9 +37,9 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-const PORT = process.env.BOT_WEBHOOK_PORT || 3001;
-app.listen(PORT, () => {
+const PORT = process.env.BOT_WEBHOOK_PORT || 3000;
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Bot webhook server rodando na porta ${PORT}`);
 });
 
-module.exports = app;
+module.exports = { app, server };
