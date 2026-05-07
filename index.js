@@ -6,6 +6,7 @@ const { loadEvents } = require('./handlers/eventHandler');
 const { registerSlashCommands } = require('./handlers/registerCommands');
 const logger = require('./utils/logger');
 const { app } = require('./handlers/botWebhook');
+require('./handlers/purchaseHandler');
 
 const client = new Client({
   intents: [

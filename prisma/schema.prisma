@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Settings {
+  key   String @id
+  value String
+}
+
+model User {
+  id               String             @id @default(cuid())
+  discordId        String             @unique
+  username         String
+  avatar           String?
+  email            String?
+  role             String             @default("user")
+  purchases        Purchase[]
+  affiliate        Affiliate?
+  testLicenses     TestLicense[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  notifySales      Boolean           @default(true)
+  notifyAccess     Boolean           @default(true)
+  notifyInstall    Boolean           @default(true)
+  notifyUninstall  Boolean           @default(true)
+  notifyCoupon     Boolean           @default(true)
+  notifyAffiliate  Boolean           @default(true)
+}
+
+model Purchase {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product           String
+  period            String    @default("30d")
+  status            String    @default("pending")
+  amount            Float
+  paymentId         String?
+  expiresAt         DateTime?
+  isLifetime        Boolean   @default(false)
+  installed         Boolean   @default(false)
+  couponCode        String?
+  discountAmount    Float?
+  affiliateId       String?
+  affiliate         Affiliate? @relation(fields: [affiliateId], references: [id])
+  hasENB            Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model AffiliateApplication {
+  id                String    @id @default(cuid())
+  userId            String
+  username          String
+  name              String
+  email             String
+  phone             String
+  cpf               String
+  instagram         String?
+  tiktok            String?
+  youtube           String?
+  reason            String
+  pixKeyType        String
+  pixKey            String
+  discordId         String?
+  status            String    @default("pending")
+  affiliateId       String?
+  affiliate         Affiliate? @relation(fields: [affiliateId], references: [id])
+  createdAt         DateTime  @default(now())
+}
+
+model Affiliate {
+  id             String                 @id @default(cuid())
+  userId         String                 @unique
+  username       String                 @unique
+  couponCode     String?                @unique
+  discountPct    Int                    @default(30)
+  commissionPct  Int                    @default(10)
+  earnings       Float                  @default(0)
+  withdrawn      Float                  @default(0)
+  pixKey         String?
+  pixKeyType     String?
+  status         String                 @default("active")
+  lastWithdrawAt DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  purchases      Purchase[]
+  applications   AffiliateApplication[]
+  withdrawals    Withdrawal[]
+  user           User                   @relation(fields: [userId], references: [id])
+}
+
+model Withdrawal {
+  id          String    @id @default(cuid())
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amount      Float
+  pixKey      String
+  pixKeyType  String?
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+}
+
+model TempCoupon {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  code        String   @unique
+  discountPct Int      @default(30)
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AdminCoupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  discountPct Int
+  product     String   @default("all")
+  period      String   @default("all")
+  usageLimit  Int      @default(0)
+  usageCount  Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model TestLicense {
+  id          String   @id @default(cuid())
+  userId      String
+  version     String
+  hwid        String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  keys      Json
+  createdAt DateTime @default(now())
+}
