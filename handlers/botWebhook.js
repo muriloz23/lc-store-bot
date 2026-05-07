@@ -37,7 +37,7 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-const PORT = process.env.BOT_WEBHOOK_PORT || 3000;
+const PORT = process.env.PORT || 80;
 const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Bot webhook server rodando na porta ${PORT}`);
 });
