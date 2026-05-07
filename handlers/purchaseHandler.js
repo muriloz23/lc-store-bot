@@ -4,7 +4,7 @@ const config = require('../config');
 const logger = require('../utils/logger');
 
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
+  accelerateUrl: process.env.DATABASE_URL,
 });
 const rest = new REST().setToken(config.token);
 
