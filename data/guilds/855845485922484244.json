@@ -1,10 +1,10 @@
 {
   "guildId": "855845485922484244",
   "panel": {
-    "title": "Central de Atendimento",
-    "description": "Escolha uma opção abaixo para abrir seu atendimento.",
+    "title": "Atendimento LC STORE – Produtos",
+    "description": "🛒 Compra segura | Suporte de qualidade\nConte com nossa equipe para te ajudar na escolha e entrega do seu produto",
     "imageUrl": "",
-    "bannerUrl": "",
+    "bannerUrl": "https://media.discordapp.net/attachments/1502027308888883202/1502048993440563300/image.png?ex=69fe4ba2&is=69fcfa22&hm=011c9e6c2d0260c575d2254be562d512b2c17df81c5cb57b4d04d3631791b259&=&format=webp&quality=lossless&width=1440&height=563",
     "accentColor": 2829617,
     "pix": {
       "type": "email",
@@ -41,11 +41,11 @@
     ]
   },
   "logs": {
-    "channelId": null,
-    "transcriptChannelId": null
+    "channelId": "1286895952027979870",
+    "transcriptChannelId": "1286895952027979870"
   },
   "ticket": {
-    "categoryId": null,
+    "categoryId": "1298014781889839165",
     "lastPanelMessage": null,
     "counter": 0
   },
