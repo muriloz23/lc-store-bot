@@ -62,7 +62,7 @@ process.on('uncaughtException', (error) => {
 boot();
 
 // Manter o servidor HTTP rodando
-const PORT = process.env.PORT || 80;
+const PORT = 80;
 app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Bot webhook server rodando na porta ${PORT}`);
 });
