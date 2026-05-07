@@ -1,0 +1,60 @@
+{
+  "guildId": "1475656955900067913",
+  "panel": {
+    "title": "Central de Atendimento",
+    "description": "Escolha uma opção abaixo para abrir seu atendimento.",
+    "imageUrl": "",
+    "bannerUrl": "",
+    "accentColor": 2829617,
+    "pix": {
+      "type": "email",
+      "key": ""
+    },
+    "admins": [],
+    "staffRoles": [
+      "1476691817046081616"
+    ],
+    "managerRoles": [],
+    "pingRoleId": null,
+    "buttons": [
+      {
+        "id": "suporte",
+        "label": "Suporte",
+        "style": 2
+      }
+    ],
+    "selectMenus": [
+      {
+        "id": "atendimento",
+        "placeholder": "Escolha o setor",
+        "options": [
+          {
+            "value": "financeiro",
+            "label": "Financeiro",
+            "description": "Dúvidas sobre cobrança e pagamento"
+          },
+          {
+            "value": "suporte_tecnico",
+            "label": "Suporte técnico",
+            "description": "Problemas técnicos e atendimento geral"
+          }
+        ]
+      }
+    ]
+  },
+  "logs": {
+    "channelId": null,
+    "transcriptChannelId": "1475694853890248704"
+  },
+  "ticket": {
+    "categoryId": "1475789480467239015",
+    "lastPanelMessage": {
+      "channelId": "1475694853890248704",
+      "messageId": "1487593306342035567",
+      "sentBy": "1469764317405773864",
+      "sentAt": "2026-03-28T23:24:42.545Z"
+    },
+    "counter": 1
+  },
+  "blacklist": []
+}

@@ -1,0 +1,58 @@
+{
+  "guildId": "1502027308377309275",
+  "panel": {
+    "title": "Central de atendimento LC STORE",
+    "description": "Escolha uma opção abaixo para abrir seu atendimento.",
+    "imageUrl": "",
+    "bannerUrl": "https://cdn.discordapp.com/banners/855845485922484244/a_af5c20c68a3bd3ad89ef43d24a59b525.gif?size=1024&animated=true",
+    "accentColor": 2829617,
+    "pix": {
+      "type": "cpf",
+      "key": "168.225.317-18"
+    },
+    "admins": [],
+    "staffRoles": [],
+    "managerRoles": [],
+    "pingRoleId": null,
+    "buttons": [
+      {
+        "id": "suporte",
+        "label": "Suporte",
+        "style": 2
+      }
+    ],
+    "selectMenus": [
+      {
+        "id": "atendimento",
+        "placeholder": "Escolha o setor",
+        "options": [
+          {
+            "value": "financeiro",
+            "label": "Financeiro",
+            "description": "Dúvidas sobre cobrança e pagamento"
+          },
+          {
+            "value": "suporte_tecnico",
+            "label": "Suporte técnico",
+            "description": "Problemas técnicos e atendimento geral"
+          }
+        ]
+      }
+    ]
+  },
+  "logs": {
+    "channelId": null,
+    "transcriptChannelId": null
+  },
+  "ticket": {
+    "categoryId": "1502027308888883200",
+    "lastPanelMessage": {
+      "channelId": "1502027308888883202",
+      "messageId": "1502029888771719239",
+      "sentBy": "1329449358709755946",
+      "sentAt": "2026-05-07T19:30:33.874Z"
+    },
+    "counter": 1
+  },
+  "blacklist": []
+}

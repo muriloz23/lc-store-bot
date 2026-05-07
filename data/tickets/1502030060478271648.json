@@ -1,0 +1,19 @@
+{
+  "channelId": "1502030060478271648",
+  "guildId": "1502027308377309275",
+  "ownerId": "1329449358709755946",
+  "openedBy": "1329449358709755946",
+  "source": {
+    "type": "select",
+    "id": "financeiro",
+    "label": "Financeiro",
+    "openedFromUserId": "1329449358709755946"
+  },
+  "extraUsers": [],
+  "claimedBy": null,
+  "closedBy": null,
+  "status": "open",
+  "createdAt": "2026-05-07T19:31:15.025Z",
+  "updatedAt": "2026-05-07T19:31:15.025Z",
+  "ticketNumber": 1
+}
