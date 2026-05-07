@@ -97,13 +97,17 @@ async function createTranscriptFile(channel, ticket) {
   const safeName = `${channel.name}-${Date.now()}.html`.replace(/[^a-zA-Z0-9_.-]/g, '_');
   const absolutePath = path.join(TRANSCRIPTS_DIR, safeName);
 
-  if (config.transcript.saveToDisk) {
-    await fs.writeFile(absolutePath, html, 'utf8');
-  }
+  // Sempre salvar no disco
+  await fs.writeFile(absolutePath, html, 'utf8');
+
+  // Gerar URL pública usando o domínio do bot
+  const botUrl = process.env.BOT_URL || 'http://localhost:80';
+  const publicUrl = `${botUrl}/transcripts/${safeName}`;
 
   return {
     path: absolutePath,
     fileName: safeName,
+    url: publicUrl,
     attachment: new AttachmentBuilder(Buffer.from(html, 'utf8'), { name: safeName }),
     messageCount: messages.length
   };

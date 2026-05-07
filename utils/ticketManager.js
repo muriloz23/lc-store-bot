@@ -181,23 +181,25 @@ async function sendTranscript(guild, transcript, ticket, closedBy) {
   const guildData = await getGuildData(guild.id);
   const panel = guildData.panels[0] || { accentColor: 0x5865F2 };
 
+  // Enviar URL do transcript no canal de transcript configurado
   if (guildData.logs.transcriptChannelId) {
     const transcriptChannel = guild.channels.cache.get(guildData.logs.transcriptChannelId)
       || await guild.channels.fetch(guildData.logs.transcriptChannelId).catch(() => null);
 
     if (transcriptChannel?.isTextBased()) {
       const payload = buildContainerPayload({
-        title: 'Transcript HTML gerado',
+        title: 'Transcript gerado',
         body: [
           `**Ticket:** <#${ticket.channelId}>`,
           `**Usuário:** <@${ticket.ownerId}>`,
           `**Fechado por:** <@${closedBy.id}>`,
-          `**Mensagens capturadas:** ${transcript.messageCount}`
+          `**Mensagens capturadas:** ${transcript.messageCount}`,
+          `**Acessar transcript:** ${transcript.url}`
         ].join('\n'),
         accentColor: panel.accentColor
       });
 
-      await transcriptChannel.send(asV2Message(payload, { files: [transcript.attachment] })).catch((error) => {
+      await transcriptChannel.send(asV2Message(payload)).catch((error) => {
         logger.error('Falha ao enviar transcript.', error);
       });
     }
@@ -205,8 +207,7 @@ async function sendTranscript(guild, transcript, ticket, closedBy) {
 
   await sendLogMessage(
     guild,
-    `Transcript gerado para o ticket <#${ticket.channelId}>. Fechado por <@${closedBy.id}>.`,
-    [transcript.attachment]
+    `Transcript gerado para o ticket <#${ticket.channelId}>. Acessar em: ${transcript.url}. Fechado por <@${closedBy.id}>.`
   );
 }
 

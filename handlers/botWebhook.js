@@ -1,5 +1,7 @@
 const express = require('express');
 const { REST, Routes } = require('discord.js');
+const { readFile } = require('fs/promises');
+const { join } = require('path');
 
 const config = require('../config');
 const logger = require('../utils/logger');
@@ -9,6 +11,21 @@ const rest = new REST().setToken(config.token);
 
 const app = express();
 app.use(express.json());
+
+// Endpoint para servir transcripts HTML
+app.get('/transcripts/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const transcriptPath = join(process.cwd(), 'data', 'transcripts', filename);
+    
+    const html = await readFile(transcriptPath, 'utf8');
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    logger.error('[Transcript] Erro ao servir transcript:', error);
+    res.status(404).send('Transcript não encontrado');
+  }
+});
 
 app.post('/webhook', async (req, res) => {
   try {
