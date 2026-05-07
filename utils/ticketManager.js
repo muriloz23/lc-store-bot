@@ -91,20 +91,20 @@ function createSelectRows(selectMenus) {
     });
 }
 
-function buildPublicPanelMessage(guildData) {
-  const container = new ContainerBuilder().setAccentColor(guildData.panel.accentColor);
+function buildPublicPanelMessage(panelData) {
+  const container = new ContainerBuilder().setAccentColor(panelData.accentColor);
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`# ${guildData.panel.title}\n${guildData.panel.description}`)
+    new TextDisplayBuilder().setContent(`# ${panelData.title}\n${panelData.description}`)
   );
 
-  const galleryComponent = buildGalleryComponent(guildData);
+  const galleryComponent = buildGalleryComponent({ panel: panelData });
   if (galleryComponent) {
     container.addMediaGalleryComponents(galleryComponent);
   }
 
-  const buttonRows = createButtonRows(guildData.panel.buttons);
-  const selectRows = createSelectRows(guildData.panel.selectMenus);
+  const buttonRows = createButtonRows(panelData.buttons);
+  const selectRows = createSelectRows(panelData.selectMenus);
 
   for (const row of [...buttonRows, ...selectRows]) {
     container.addActionRowComponents(row);
@@ -114,7 +114,8 @@ function buildPublicPanelMessage(guildData) {
 }
 
 function buildTicketMessage(guildData, ticket) {
-  const container = new ContainerBuilder().setAccentColor(guildData.panel.accentColor);
+  const panel = guildData.panels[0] || guildData.panels?.[0] || { accentColor: 0x5865F2 };
+  const container = new ContainerBuilder().setAccentColor(panel.accentColor);
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
@@ -164,10 +165,11 @@ async function sendLogMessage(guild, content, files = []) {
 
   if (!channel?.isTextBased()) return;
 
+  const panel = guildData.panels[0] || { accentColor: 0x5865F2 };
   const payload = buildContainerPayload({
     title: 'Log do sistema',
     body: content,
-    accentColor: guildData.panel.accentColor
+    accentColor: panel.accentColor
   });
 
   await channel.send(asV2Message(payload, { files })).catch((error) => {
@@ -177,6 +179,7 @@ async function sendLogMessage(guild, content, files = []) {
 
 async function sendTranscript(guild, transcript, ticket, closedBy) {
   const guildData = await getGuildData(guild.id);
+  const panel = guildData.panels[0] || { accentColor: 0x5865F2 };
 
   if (guildData.logs.transcriptChannelId) {
     const transcriptChannel = guild.channels.cache.get(guildData.logs.transcriptChannelId)
@@ -191,7 +194,7 @@ async function sendTranscript(guild, transcript, ticket, closedBy) {
           `**Fechado por:** <@${closedBy.id}>`,
           `**Mensagens capturadas:** ${transcript.messageCount}`
         ].join('\n'),
-        accentColor: guildData.panel.accentColor
+        accentColor: panel.accentColor
       });
 
       await transcriptChannel.send(asV2Message(payload, { files: [transcript.attachment] })).catch((error) => {
@@ -211,6 +214,9 @@ async function createTicketChannel(client, guild, user, source) {
   const guildData = await getGuildData(guild.id);
   const system = await getSystemData();
   const ticketNumber = await incrementTicketCounter(guild.id);
+
+  // Encontrar o painel correto baseado na fonte
+  const panel = guildData.panels.find(p => p.id === source.panelId) || guildData.panels[0];
 
   const overwrites = [
     {
@@ -248,14 +254,14 @@ async function createTicketChannel(client, guild, user, source) {
     });
   }
 
-  for (const adminId of guildData.panel.admins) {
+  for (const adminId of panel?.admins || []) {
     overwrites.push({
       id: adminId,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
     });
   }
 
-  for (const roleId of [...new Set([...guildData.panel.staffRoles, ...guildData.panel.managerRoles])]) {
+  for (const roleId of [...new Set([...(panel?.staffRoles || []), ...(panel?.managerRoles || [])])]) {
     overwrites.push({
       id: roleId,
       allow: [
@@ -284,7 +290,8 @@ async function createTicketChannel(client, guild, user, source) {
     ownerId: user.id,
     source: {
       ...source,
-      openedFromUserId: user.id
+      openedFromUserId: user.id,
+      panelId: panel?.id
     },
     ticketNumber
   });
@@ -292,26 +299,36 @@ async function createTicketChannel(client, guild, user, source) {
   return channel;
 }
 
-async function publishPanelToChannel(guild, channel, actor) {
+async function publishPanelToChannel(guild, channel, actor, panelId = null) {
   const guildData = await getGuildData(guild.id);
-  const message = await channel.send(asV2Message(buildPublicPanelMessage(guildData)));
+  const panel = panelId 
+    ? guildData.panels.find(p => p.id === panelId) 
+    : guildData.panels[0];
+  
+  if (!panel) {
+    throw new Error('Painel não encontrado');
+  }
+
+  const message = await channel.send(asV2Message(buildPublicPanelMessage(panel)));
 
   await setLastPanelMessage(guild.id, {
     channelId: channel.id,
     messageId: message.id,
     sentBy: actor.id,
-    sentAt: new Date().toISOString()
+    sentAt: new Date().toISOString(),
+    panelId: panel.id
   });
 
-  await sendLogMessage(guild, `<@${actor.id}> publicou o painel de tickets em <#${channel.id}>.`);
+  await sendLogMessage(guild, `<@${actor.id}> publicou o painel "${panel.name}" em <#${channel.id}>.`);
   return message;
 }
 
 async function notifyUserInTicket(channel, ticket, guildData) {
+  const panel = guildData.panels[0] || { accentColor: 0x5865F2 };
   const payload = buildContainerPayload({
     title: 'Notificação ao usuário',
     body: `<@${ticket.ownerId}>, sua atenção foi solicitada neste ticket.`,
-    accentColor: guildData.panel.accentColor
+    accentColor: panel.accentColor
   });
 
   await channel.send(asV2Message(payload, {
@@ -322,17 +339,18 @@ async function notifyUserInTicket(channel, ticket, guildData) {
 }
 
 async function notifyStaffInTicket(channel, guildData) {
-  const target = guildData.panel.pingRoleId ? `<@&${guildData.panel.pingRoleId}>` : '@here';
+  const panel = guildData.panels[0] || { accentColor: 0x5865F2, pingRoleId: null };
+  const target = panel.pingRoleId ? `<@&${panel.pingRoleId}>` : '@here';
   const payload = buildContainerPayload({
     title: 'Notificação à equipe',
     body: `${target} atenção da equipe solicitada neste ticket.`,
-    accentColor: guildData.panel.accentColor
+    accentColor: panel.accentColor
   });
 
   await channel.send(asV2Message(payload, {
     allowedMentions: {
-      parse: guildData.panel.pingRoleId ? [] : ['everyone'],
-      roles: guildData.panel.pingRoleId ? [guildData.panel.pingRoleId] : []
+      parse: panel.pingRoleId ? [] : ['everyone'],
+      roles: panel.pingRoleId ? [panel.pingRoleId] : []
     }
   }));
 }

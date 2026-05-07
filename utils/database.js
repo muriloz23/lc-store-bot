@@ -21,46 +21,50 @@ function getDefaultSystemData() {
 function getDefaultGuildData(guildId) {
   return {
     guildId,
-    panel: {
-      title: config.defaults.panelTitle,
-      description: config.defaults.panelDescription,
-      imageUrl: '',
-      bannerUrl: '',
-      accentColor: config.defaults.accentColor,
-      pix: {
-        type: 'email',
-        key: ''
-      },
-      admins: [],
-      staffRoles: [],
-      managerRoles: [],
-      pingRoleId: null,
-      buttons: [
-        {
-          id: 'suporte',
-          label: 'Suporte',
-          style: 2
-        }
-      ],
-      selectMenus: [
-        {
-          id: 'atendimento',
-          placeholder: 'Escolha o setor',
-          options: [
-            {
-              value: 'financeiro',
-              label: 'Financeiro',
-              description: 'Dúvidas sobre cobrança e pagamento'
-            },
-            {
-              value: 'suporte_tecnico',
-              label: 'Suporte técnico',
-              description: 'Problemas técnicos e atendimento geral'
-            }
-          ]
-        }
-      ]
-    },
+    panels: [
+      {
+        id: 'suporte',
+        name: 'Suporte',
+        title: config.defaults.panelTitle,
+        description: config.defaults.panelDescription,
+        imageUrl: '',
+        bannerUrl: '',
+        accentColor: config.defaults.accentColor,
+        pix: {
+          type: 'email',
+          key: ''
+        },
+        admins: [],
+        staffRoles: [],
+        managerRoles: [],
+        pingRoleId: null,
+        buttons: [
+          {
+            id: 'suporte',
+            label: 'Suporte',
+            style: 2
+          }
+        ],
+        selectMenus: [
+          {
+            id: 'atendimento',
+            placeholder: 'Escolha o setor',
+            options: [
+              {
+                value: 'financeiro',
+                label: 'Financeiro',
+                description: 'Dúvidas sobre cobrança e pagamento'
+              },
+              {
+                value: 'suporte_tecnico',
+                label: 'Suporte técnico',
+                description: 'Problemas técnicos e atendimento geral'
+              }
+            ]
+          }
+        ]
+      }
+    ],
     logs: {
       channelId: null,
       transcriptChannelId: null
@@ -122,17 +126,22 @@ async function getGuildData(guildId) {
   const fallback = getDefaultGuildData(guildId);
   const data = await readJson(getGuildFile(guildId), () => fallback);
 
+  // Migrar dados antigos de panel para panels
+  if (data.panel && !data.panels) {
+    data.panels = [
+      {
+        id: 'suporte',
+        name: 'Suporte',
+        ...data.panel
+      }
+    ];
+    delete data.panel;
+  }
+
   const merged = {
     ...fallback,
     ...data,
-    panel: {
-      ...fallback.panel,
-      ...(data.panel || {}),
-      pix: {
-        ...fallback.panel.pix,
-        ...(data.panel?.pix || {})
-      }
-    },
+    panels: data.panels || fallback.panels,
     logs: {
       ...fallback.logs,
       ...(data.logs || {})
@@ -143,16 +152,30 @@ async function getGuildData(guildId) {
     }
   };
 
-  if (!Array.isArray(merged.panel.buttons)) merged.panel.buttons = [];
-  if (!Array.isArray(merged.panel.selectMenus)) merged.panel.selectMenus = [];
-  if (!Array.isArray(merged.panel.admins)) merged.panel.admins = [];
-  if (!Array.isArray(merged.panel.staffRoles)) merged.panel.staffRoles = [];
-  if (!Array.isArray(merged.panel.managerRoles)) merged.panel.managerRoles = [];
-  if (!Array.isArray(merged.blacklist)) merged.blacklist = [];
+  // Validar e sanitizar cada painel
+  if (!Array.isArray(merged.panels)) merged.panels = fallback.panels;
+  
+  merged.panels = merged.panels.map(panel => ({
+    id: panel.id || `panel_${Date.now()}`,
+    name: panel.name || 'Painel',
+    title: panel.title || config.defaults.panelTitle,
+    description: panel.description || config.defaults.panelDescription,
+    imageUrl: panel.imageUrl || '',
+    bannerUrl: panel.bannerUrl || '',
+    accentColor: panel.accentColor || config.defaults.accentColor,
+    pix: {
+      type: panel.pix?.type || 'email',
+      key: panel.pix?.key || ''
+    },
+    admins: Array.isArray(panel.admins) ? panel.admins : [],
+    staffRoles: Array.isArray(panel.staffRoles) ? panel.staffRoles : [],
+    managerRoles: Array.isArray(panel.managerRoles) ? panel.managerRoles : [],
+    pingRoleId: panel.pingRoleId || null,
+    buttons: Array.isArray(panel.buttons) ? panel.buttons : [],
+    selectMenus: Array.isArray(panel.selectMenus) ? panel.selectMenus : []
+  }));
 
-  if (!data.panel?.accentColor || data.panel.accentColor === 0x5865F2) {
-    merged.panel.accentColor = config.defaults.accentColor;
-  }
+  if (!Array.isArray(merged.blacklist)) merged.blacklist = [];
 
   await saveGuildData(guildId, merged);
   return merged;
@@ -278,5 +301,77 @@ module.exports = {
   findOpenTicketByUser,
   addUserToBlacklist,
   incrementTicketCounter,
-  setLastPanelMessage
+  setLastPanelMessage,
+  // Funções auxiliares para gerenciar painéis
+  async createPanel(guildId, panelData) {
+    const guildData = await getGuildData(guildId);
+    const newPanel = {
+      id: panelData.id || `panel_${Date.now()}`,
+      name: panelData.name || 'Painel',
+      title: panelData.title || config.defaults.panelTitle,
+      description: panelData.description || config.defaults.panelDescription,
+      imageUrl: panelData.imageUrl || '',
+      bannerUrl: panelData.bannerUrl || '',
+      accentColor: panelData.accentColor || config.defaults.accentColor,
+      pix: {
+        type: panelData.pix?.type || 'email',
+        key: panelData.pix?.key || ''
+      },
+      admins: Array.isArray(panelData.admins) ? panelData.admins : [],
+      staffRoles: Array.isArray(panelData.staffRoles) ? panelData.staffRoles : [],
+      managerRoles: Array.isArray(panelData.managerRoles) ? panelData.managerRoles : [],
+      pingRoleId: panelData.pingRoleId || null,
+      buttons: Array.isArray(panelData.buttons) ? panelData.buttons : [],
+      selectMenus: Array.isArray(panelData.selectMenus) ? panelData.selectMenus : []
+    };
+    
+    guildData.panels.push(newPanel);
+    await saveGuildData(guildId, guildData);
+    return newPanel;
+  },
+  
+  async updatePanel(guildId, panelId, panelData) {
+    const guildData = await getGuildData(guildId);
+    const panelIndex = guildData.panels.findIndex(p => p.id === panelId);
+    
+    if (panelIndex === -1) {
+      throw new Error('Painel não encontrado');
+    }
+    
+    guildData.panels[panelIndex] = {
+      ...guildData.panels[panelIndex],
+      ...panelData,
+      id: panelId // Garante que o ID não mude
+    };
+    
+    await saveGuildData(guildId, guildData);
+    return guildData.panels[panelIndex];
+  },
+  
+  async deletePanel(guildId, panelId) {
+    const guildData = await getGuildData(guildId);
+    const panelIndex = guildData.panels.findIndex(p => p.id === panelId);
+    
+    if (panelIndex === -1) {
+      throw new Error('Painel não encontrado');
+    }
+    
+    if (guildData.panels.length === 1) {
+      throw new Error('Não é possível excluir o único painel restante');
+    }
+    
+    guildData.panels.splice(panelIndex, 1);
+    await saveGuildData(guildId, guildData);
+    return true;
+  },
+  
+  async getPanel(guildId, panelId) {
+    const guildData = await getGuildData(guildId);
+    return guildData.panels.find(p => p.id === panelId) || null;
+  },
+  
+  async listPanels(guildId) {
+    const guildData = await getGuildData(guildId);
+    return guildData.panels;
+  }
 };
