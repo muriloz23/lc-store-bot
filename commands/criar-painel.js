@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { createPanel } = require('../utils/database');
+const { buildContainerPayload, asV2Message } = require('../utils/ui');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -23,10 +24,8 @@ module.exports = {
         .setDescription('Descrição do painel')
         .setRequired(false)),
 
-  async execute(interaction) {
+  async execute(client, interaction) {
     try {
-      await interaction.deferReply();
-
       const guildId = interaction.guildId;
       const id = interaction.options.getString('id');
       const name = interaction.options.getString('nome');
@@ -40,10 +39,21 @@ module.exports = {
         description
       });
 
-      await interaction.editReply(`✅ Painel "${name}" criado com sucesso! ID: \`${newPanel.id}\``);
+      const payload = buildContainerPayload({
+        title: 'Painel criado',
+        body: `Painel "${name}" criado com sucesso! ID: \`${newPanel.id}\``,
+        accentColor: client.config.defaults.accentColor
+      });
+
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     } catch (error) {
       logger.error('Erro ao criar painel:', error);
-      await interaction.editReply('Erro ao criar painel.');
+      const payload = buildContainerPayload({
+        title: 'Erro',
+        body: 'Erro ao criar painel.',
+        accentColor: client.config.defaults.accentColor
+      });
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     }
   }
 };

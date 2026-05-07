@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { updatePanel } = require('../utils/database');
+const { buildContainerPayload, asV2Message } = require('../utils/ui');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -23,10 +24,8 @@ module.exports = {
         .setDescription('Nova descrição do painel')
         .setRequired(false)),
 
-  async execute(interaction) {
+  async execute(client, interaction) {
     try {
-      await interaction.deferReply();
-
       const guildId = interaction.guildId;
       const panelId = interaction.options.getString('id');
       const name = interaction.options.getString('nome');
@@ -39,19 +38,35 @@ module.exports = {
       if (description) updateData.description = description;
 
       if (Object.keys(updateData).length === 0) {
-        return await interaction.editReply('❌ Você precisa fornecer pelo menos um campo para editar.');
+        const payload = buildContainerPayload({
+          title: 'Erro',
+          body: 'Você precisa fornecer pelo menos um campo para editar.',
+          accentColor: client.config.defaults.accentColor
+        });
+        return await interaction.reply(asV2Message(payload, { ephemeral: true }));
       }
 
       const updatedPanel = await updatePanel(guildId, panelId, updateData);
 
-      await interaction.editReply(`✅ Painel "${updatedPanel.name}" atualizado com sucesso!`);
+      const payload = buildContainerPayload({
+        title: 'Painel atualizado',
+        body: `Painel "${updatedPanel.name}" atualizado com sucesso!`,
+        accentColor: client.config.defaults.accentColor
+      });
+
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     } catch (error) {
       logger.error('Erro ao editar painel:', error);
+      let errorMessage = 'Erro ao editar painel.';
       if (error.message === 'Painel não encontrado') {
-        await interaction.editReply('❌ Painel não encontrado.');
-      } else {
-        await interaction.editReply('Erro ao editar painel.');
+        errorMessage = 'Painel não encontrado.';
       }
+      const payload = buildContainerPayload({
+        title: 'Erro',
+        body: errorMessage,
+        accentColor: client.config.defaults.accentColor
+      });
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     }
   }
 };

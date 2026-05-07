@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { listPanels } = require('../utils/database');
+const { buildContainerPayload, asV2Message } = require('../utils/ui');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -7,15 +8,18 @@ module.exports = {
     .setName('painels')
     .setDescription('Lista todos os painéis configurados'),
 
-  async execute(interaction) {
+  async execute(client, interaction) {
     try {
-      await interaction.deferReply();
-
       const guildId = interaction.guildId;
       const panels = await listPanels(guildId);
 
       if (panels.length === 0) {
-        return await interaction.editReply('Nenhum painel configurado.');
+        const payload = buildContainerPayload({
+          title: 'Painéis',
+          body: 'Nenhum painel configurado.',
+          accentColor: client.config.defaults.accentColor
+        });
+        return await interaction.reply(asV2Message(payload, { ephemeral: true }));
       }
 
       const panelList = panels.map((panel, index) => {
@@ -25,10 +29,21 @@ module.exports = {
    Menus: ${panel.selectMenus.length}`;
       }).join('\n\n');
 
-      await interaction.editReply(`📋 **Painéis configurados:**\n\n${panelList}`);
+      const payload = buildContainerPayload({
+        title: 'Painéis configurados',
+        body: panelList,
+        accentColor: client.config.defaults.accentColor
+      });
+
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     } catch (error) {
       logger.error('Erro ao listar painéis:', error);
-      await interaction.editReply('Erro ao listar painéis.');
+      const payload = buildContainerPayload({
+        title: 'Erro',
+        body: 'Erro ao listar painéis.',
+        accentColor: client.config.defaults.accentColor
+      });
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     }
   }
 };

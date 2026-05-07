@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { deletePanel } = require('../utils/database');
+const { buildContainerPayload, asV2Message } = require('../utils/ui');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -11,25 +12,34 @@ module.exports = {
         .setDescription('ID do painel para deletar')
         .setRequired(true)),
 
-  async execute(interaction) {
+  async execute(client, interaction) {
     try {
-      await interaction.deferReply();
-
       const guildId = interaction.guildId;
       const panelId = interaction.options.getString('id');
 
       await deletePanel(guildId, panelId);
 
-      await interaction.editReply(`✅ Painel com ID \`${panelId}\` deletado com sucesso!`);
+      const payload = buildContainerPayload({
+        title: 'Painel deletado',
+        body: `Painel com ID \`${panelId}\` deletado com sucesso!`,
+        accentColor: client.config.defaults.accentColor
+      });
+
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     } catch (error) {
       logger.error('Erro ao deletar painel:', error);
+      let errorMessage = 'Erro ao deletar painel.';
       if (error.message === 'Painel não encontrado') {
-        await interaction.editReply('❌ Painel não encontrado.');
+        errorMessage = 'Painel não encontrado.';
       } else if (error.message === 'Não é possível excluir o único painel restante') {
-        await interaction.editReply('❌ Não é possível excluir o único painel restante. Você precisa de pelo menos um painel.');
-      } else {
-        await interaction.editReply('Erro ao deletar painel.');
+        errorMessage = 'Não é possível excluir o único painel restante. Você precisa de pelo menos um painel.';
       }
+      const payload = buildContainerPayload({
+        title: 'Erro',
+        body: errorMessage,
+        accentColor: client.config.defaults.accentColor
+      });
+      await interaction.reply(asV2Message(payload, { ephemeral: true }));
     }
   }
 };
