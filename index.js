@@ -5,6 +5,7 @@ const { loadCommands } = require('./handlers/commandHandler');
 const { loadEvents } = require('./handlers/eventHandler');
 const { registerSlashCommands } = require('./handlers/registerCommands');
 const logger = require('./utils/logger');
+const { app } = require('./handlers/botWebhook');
 
 const client = new Client({
   intents: [
@@ -57,4 +58,11 @@ process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception detectada.', error);
 });
 
+// Iniciar o bot Discord
 boot();
+
+// Manter o servidor HTTP rodando
+const PORT = process.env.PORT || 80;
+app.listen(PORT, '0.0.0.0', () => {
+  logger.info(`Bot webhook server rodando na porta ${PORT}`);
+});
