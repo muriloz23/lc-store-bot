@@ -21,13 +21,15 @@ function mentionRoleList(ids = []) {
 }
 
 function summarizeButtons(guildData) {
-  if (!guildData.panel.buttons.length) return 'nenhum';
-  return guildData.panel.buttons.map((button) => `\`${button.id}\` (${button.label})`).join(', ');
+  const panel = guildData.panels[0] || guildData.panel || { buttons: [] };
+  if (!panel.buttons.length) return 'nenhum';
+  return panel.buttons.map((button) => `\`${button.id}\` (${button.label})`).join(', ');
 }
 
 function summarizeMenus(guildData) {
-  if (!guildData.panel.selectMenus.length) return 'nenhum';
-  return guildData.panel.selectMenus.map((menu) => `\`${menu.id}\` (${menu.options?.length || 0} opção/ões)`).join(', ');
+  const panel = guildData.panels[0] || guildData.panel || { selectMenus: [] };
+  if (!panel.selectMenus.length) return 'nenhum';
+  return panel.selectMenus.map((menu) => `\`${menu.id}\` (${menu.options?.length || 0} opção/ões)`).join(', ');
 }
 
 function formatTimestamp(date = new Date()) {
@@ -38,16 +40,30 @@ function formatTimestamp(date = new Date()) {
 }
 
 function createDashboardSummary(guildData, client) {
+  const panel = guildData.panels[0] || guildData.panel || { 
+    admins: [], 
+    staffRoles: [], 
+    managerRoles: [], 
+    pingRoleId: null, 
+    buttons: [], 
+    selectMenus: [],
+    title: '',
+    description: '',
+    imageUrl: '',
+    bannerUrl: '',
+    pix: { key: '' }
+  };
+  
   return [
     `Logs: ${guildData.logs.channelId ? `<#${guildData.logs.channelId}>` : 'não definido'}`,
     `Transcript: ${guildData.logs.transcriptChannelId ? `<#${guildData.logs.transcriptChannelId}>` : 'não definido'}`,
     `Categoria de tickets: ${guildData.ticket.categoryId ? `<#${guildData.ticket.categoryId}>` : 'não definida'}`,
-    `Admins: ${guildData.panel.admins.length}`,
-    `Cargos staff: ${guildData.panel.staffRoles.length}`,
-    `Cargos gerente: ${guildData.panel.managerRoles.length}`,
-    `Cargo de ping: ${guildData.panel.pingRoleId ? `<@&${guildData.panel.pingRoleId}>` : 'não definido'}`,
-    `Botões configurados: ${guildData.panel.buttons.length}`,
-    `Menus configurados: ${guildData.panel.selectMenus.length}`,
+    `Admins: ${panel.admins.length}`,
+    `Cargos staff: ${panel.staffRoles.length}`,
+    `Cargos gerente: ${panel.managerRoles.length}`,
+    `Cargo de ping: ${panel.pingRoleId ? `<@&${panel.pingRoleId}>` : 'não definido'}`,
+    `Botões configurados: ${panel.buttons.length}`,
+    `Menus configurados: ${panel.selectMenus.length}`,
     `Último painel publicado: ${guildData.ticket.lastPanelMessage?.channelId ? `<#${guildData.ticket.lastPanelMessage.channelId}>` : 'ainda não enviado'}`,
     `Latência: ${Math.round(client.ws.ping || 0)}ms`,
     `Atualizado em: ${formatTimestamp()}`
@@ -92,7 +108,16 @@ function createManagementSelectRow() {
 }
 
 function buildHomePanel(guildData, client) {
-  const container = new ContainerBuilder().setAccentColor(guildData.panel.accentColor);
+  const panel = guildData.panels[0] || guildData.panel || { 
+    accentColor: 0x5865F2,
+    title: '',
+    description: '',
+    imageUrl: '',
+    bannerUrl: '',
+    pix: { key: '' }
+  };
+  
+  const container = new ContainerBuilder().setAccentColor(panel.accentColor);
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent('# Painel de configuração')
@@ -107,11 +132,11 @@ function buildHomePanel(guildData, client) {
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent([
       '**Conteúdo atual**',
-      `Título: ${guildData.panel.title}`,
-      `Descrição: ${guildData.panel.description || 'não definida'}`,
-      `Imagem: ${guildData.panel.imageUrl || 'não definida'}`,
-      `Banner: ${guildData.panel.bannerUrl || 'não definido'}`,
-      `PIX: ${guildData.panel.pix.key ? `${guildData.panel.pix.type} - ${guildData.panel.pix.key}` : 'não configurado'}`
+      `Título: ${panel.title}`,
+      `Descrição: ${panel.description || 'não definida'}`,
+      `Imagem: ${panel.imageUrl || 'não definida'}`,
+      `Banner: ${panel.bannerUrl || 'não definido'}`,
+      `PIX: ${panel.pix.key ? `${panel.pix.type} - ${panel.pix.key}` : 'não configurado'}`
     ].join('\n'))
   );
 
@@ -150,6 +175,14 @@ function buildHomePanel(guildData, client) {
 }
 
 function buildTeamTargetPanel(guildData, action) {
+  const panel = guildData.panels[0] || guildData.panel || { 
+    accentColor: 0x5865F2,
+    admins: [],
+    staffRoles: [],
+    managerRoles: [],
+    pingRoleId: null
+  };
+  
   const map = {
     admin_add: {
       title: 'Adicionar admin',
@@ -203,7 +236,7 @@ function buildTeamTargetPanel(guildData, action) {
   };
 
   const selected = map[action] || map.admin_add;
-  const container = new ContainerBuilder().setAccentColor(guildData.panel.accentColor);
+  const container = new ContainerBuilder().setAccentColor(panel.accentColor);
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`# ${selected.title}`)
@@ -213,10 +246,10 @@ function buildTeamTargetPanel(guildData, action) {
     new TextDisplayBuilder().setContent([
       selected.body,
       '',
-      `Admins: ${mentionUserList(guildData.panel.admins)}`,
-      `Staff: ${mentionRoleList(guildData.panel.staffRoles)}`,
-      `Gerentes: ${mentionRoleList(guildData.panel.managerRoles)}`,
-      `Cargo de ping: ${guildData.panel.pingRoleId ? `<@&${guildData.panel.pingRoleId}>` : 'não definido'}`
+      `Admins: ${mentionUserList(panel.admins)}`,
+      `Staff: ${mentionRoleList(panel.staffRoles)}`,
+      `Gerentes: ${mentionRoleList(panel.managerRoles)}`,
+      `Cargo de ping: ${panel.pingRoleId ? `<@&${panel.pingRoleId}>` : 'não definido'}`
     ].join('\n'))
   );
 
