@@ -1,13 +1,15 @@
 const { PrismaClient } = require('@prisma/client');
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
 const { REST, Routes } = require('discord.js');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL.replace('prisma+postgres://', 'postgres://'),
+    },
+  },
+});
 const rest = new REST().setToken(config.token);
 
 // Guarda IDs de compras já processadas para não duplicar
