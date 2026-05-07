@@ -3,7 +3,9 @@ const { REST, Routes } = require('discord.js');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DATABASE_URL,
+});
 const rest = new REST().setToken(config.token);
 
 // Guarda IDs de compras já processadas para não duplicar
